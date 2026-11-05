@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Типы совещаний — интерактив</title>
+<style>
+:root{font-family:Arial,Helvetica,sans-serif;color:#303236;font-synthesis:none}*{box-sizing:border-box}[hidden]{display:none!important}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fff;touch-action:manipulation}
+.app{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+.game{position:relative;width:min(100%,860px);height:min(100%,700px);min-height:0;overflow:hidden;isolation:isolate;container-type:size;border-radius:3px}
+.zones{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.zone{position:relative;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;overflow:hidden}
+.zone:nth-child(1){background:#d4e5ae}.zone:nth-child(2){background:#ffcf9f}.zone:nth-child(3){background:#dae4c5}.zone:nth-child(4){background:#fff0bb}
+.zone-label{font-size:clamp(15px,3.15cqw,29px);line-height:1.16;font-weight:400;max-width:90%;color:#424341;pointer-events:none;opacity:.8;overflow-wrap:anywhere}
+.help,.expand{position:absolute;z-index:12;top:8px;border:0;background:#ffffffd9;border-radius:7px;display:grid;place-items:center;width:34px;height:34px;cursor:pointer;color:#34699a;box-shadow:0 1px 5px #0002}
+.help{left:9px}.expand{right:9px}.help svg,.expand svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.card{position:absolute;z-index:4;width:clamp(120px,27%,215px);min-height:55px;padding:12px 9px 10px;border:7px solid #8bf08a;border-radius:19px;box-shadow:0 4px 8px #0004;background:#fff;text-align:center;display:flex;align-items:center;justify-content:center;font-size:clamp(12px,2.15cqw,19px);line-height:1.22;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;overflow-wrap:break-word;transition:border-color .15s,background-color .15s}
+.card .pin{position:absolute;top:-11px;left:calc(50% - 10px);width:20px;height:20px;border-radius:50%;background:#329bd1;box-shadow:0 2px 5px #0004;pointer-events:none}
+.card[data-zone="0"] .pin{background:#009e48}.card[data-zone="1"] .pin{background:#ff5e2b}.card[data-zone="2"] .pin{background:#349fd0}.card[data-zone="3"] .pin{background:#ffd26b}
+.card[data-result="right"]{border-color:#45cb71;background:#effff1}.card[data-result="wrong"]{border-color:#eb6c6c;background:#fff1f1}.card.dragging{z-index:10;cursor:grabbing;box-shadow:0 8px 18px #0005}
+.check{position:absolute;bottom:13px;right:13px;z-index:11;background:#278ed8;color:white;border:none;border-radius:50%;height:53px;width:53px;display:grid;place-items:center;box-shadow:0 3px 6px #0005;cursor:pointer}.check svg{width:31px;height:31px;stroke:white;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.actions{position:absolute;bottom:13px;left:13px;z-index:11;display:flex;gap:6px;flex-wrap:wrap}.actions button{border:1px solid #c5c7c9;border-radius:20px;background:#fff;padding:9px 12px;font:600 13px Arial;cursor:pointer;box-shadow:0 2px 4px #0001}
+.status{position:absolute;bottom:73px;left:12px;right:12px;z-index:11;pointer-events:none;text-align:center;font-size:13px;font-weight:bold;color:#333}.status span{display:inline-block;background:#fffe;padding:7px 12px;border-radius:12px;box-shadow:0 2px 6px #0002}
+.overlay{position:fixed;inset:0;z-index:30;background:#0005;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{width:min(100%,475px);max-height:min(85dvh,540px);background:#fefefe;border:12px solid #d6d6d6;border-radius:15px;padding:17px 18px 14px;box-shadow:0 6px 24px #0006;display:flex;flex-direction:column}
+.modal h2{font-size:25px;text-align:center;margin:0 0 12px}.modal p{font-size:19px;line-height:1.4;margin:0 0 16px;overflow-y:auto}.modal button{align-self:center;border:0;border-radius:50px;font-size:23px;padding:5px 35px;cursor:pointer;background:#e8e8e8;color:#333}
+.game:fullscreen{width:100vw;height:100dvh;max-width:none;max-height:none;border-radius:0}.game:fullscreen .card{width:clamp(140px,23%,280px);font-size:clamp(15px,2cqw,25px)}
+@media(max-width:460px){.card{width:34%;font-size:clamp(11px,2.6cqw,14px);border-width:5px;border-radius:13px;padding:10px 5px 7px}.card .pin{width:14px;height:14px;top:-8px;left:calc(50% - 7px)}.zone-label{font-size:clamp(14px,3.6cqw,18px)}.check{width:46px;height:46px}.modal p{font-size:17px}}
+@media(max-height:480px){.card{font-size:clamp(11px,1.8cqw,15px);padding:8px 5px;border-width:5px}.zone-label{font-size:clamp(12px,2.4cqw,20px)}.check{width:42px;height:42px}}
+</style></head>
+<body><main class="app"><section class="game" id="game" aria-label="Распределите совещания по частоте">
+<div class="zones"><div class="zone" data-zone="0"><div class="zone-label">Совещания<br>раз в неделю</div></div><div class="zone" data-zone="1"><div class="zone-label">Совещания<br>раз в месяц</div></div><div class="zone" data-zone="2"><div class="zone-label">Совещания<br>раз в две недели</div></div><div class="zone" data-zone="3"><div class="zone-label">Ситуационные<br>совещания</div></div></div>
+<button class="help" id="help" title="Инструкция" aria-label="Показать инструкцию"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4.3 1.7c-1.2 1-1.8 1.5-1.8 3"/><path d="M12 17h.01"/></svg></button>
+<button class="expand" id="expand" title="На весь экран" aria-label="На весь экран"><svg viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg></button>
+<div id="cards"></div><div class="status" id="status" aria-live="polite"></div>
+<div class="actions"><button id="retry" hidden>Попробовать снова</button><button id="reset">Начать заново</button></div>
+<button class="check" id="check" aria-label="Проверить ответы" title="Проверить"><svg viewBox="0 0 32 32"><path d="M24 15v11H6V7h16M11 16l5 5L29 8"/></svg></button>
+</section></main>
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal"><h2 id="modal-title">Задание</h2><p>Закрепите материал: определите как часто нужно проводить совещание в зависимости от его типа.</p><button id="ok">OK</button></div></div>
+<script>
+(()=>{'use strict';
+const data=[
+ {id:'current',txt:'Встреча по текущим вопросам',answer:0},
+ {id:'deputies',txt:'Общая встреча с заместителями',answer:0},
+ {id:'regions',txt:'Встреча с руководителями региональных филиалов',answer:0},
+ {id:'expenses',txt:'Встречи для анализа расходов',answer:1},
+ {id:'individual',txt:'Индивидуальные встречи с заместителями',answer:2},
+ {id:'unplanned',txt:'Незапланированные совещания по конкретным вопросам, которые требуют внимания директора',answer:3}
+];
+const game=document.getElementById('game'),holder=document.getElementById('cards'),overlay=document.getElementById('overlay'),status=document.getElementById('status');
+const retry=document.getElementById('retry'),check=document.getElementById('check');let items=[],drag=null,checked=false;
+function shuffle(arr){for(let i=arr.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}return arr}
+function coords(e){let r=game.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}}
+function size(el){return {w:el.offsetWidth,h:el.offsetHeight}}
+function clamp(n,a,b){return Math.min(Math.max(n,a),Math.max(a,b))}
+function zoneFor(x,y){let w=game.clientWidth,h=game.clientHeight;return (y>=h/2?2:0)+(x>=w/2?1:0)}
+function place(item,x,y){let s=size(item.el);item.x=clamp(x,0,game.clientWidth-s.w);item.y=clamp(y,0,game.clientHeight-s.h);item.el.style.left=item.x+'px';item.el.style.top=item.y+'px';}
+function layout(start=false){if(!items.length)return;let w=game.clientWidth,h=game.clientHeight;
+ if(start){let positions=[[.14,.13],[.57,.12],[.11,.39],[.56,.39],[.13,.68],[.57,.7]];items.forEach((o,i)=>{let s=size(o.el),p=positions[i];place(o,w*p[0],h*p[1]);o.zone=null;o.el.removeAttribute('data-zone');});}
+ else{items.forEach(o=>place(o, o.rx*(w-size(o.el).w),o.ry*(h-size(o.el).h)));}}
+function saveRatios(){items.forEach(o=>{let s=size(o.el);o.rx=o.x/Math.max(1,game.clientWidth-s.w);o.ry=o.y/Math.max(1,game.clientHeight-s.h)})}
+function feedbackOff(){checked=false;items.forEach(o=>o.el.removeAttribute('data-result'));status.textContent='';retry.hidden=true}
+function start(){holder.replaceChildren();items=shuffle(data.map(d=>({...d}))).map(d=>{let el=document.createElement('div');el.className='card';el.tabIndex=0;el.setAttribute('role','button');el.setAttribute('aria-label',d.txt+', перетащите в нужный сектор');el.innerHTML='<span class="pin"></span><span class="content"></span>';el.querySelector('.content').textContent=d.txt;holder.appendChild(el);let o={...d,el,x:0,y:0,rx:0,ry:0,zone:null};el.addEventListener('pointerdown',ev=>down(ev,o));el.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();o.zone=o.zone===null?0:(o.zone+1)%4;snap(o,o.zone);feedbackOff();saveRatios()}});return o});feedbackOff();requestAnimationFrame(()=>{layout(true);saveRatios()})}
+function snap(o,zone){let s=size(o.el),w=game.clientWidth/2,h=game.clientHeight/2;let cohort=items.filter(k=>k!==o&&k.zone===zone);let col=zone%2,row=Math.floor(zone/2);let slot=cohort.length;let xs=[.06,.52,.29,.18,.63],ys=[.17,.17,.57,.37,.54];let cardWidth=Math.min(s.w,w*.92);let targetX=col*w+Math.max(4,(w-cardWidth)*xs[slot%5]);let targetY=row*h+Math.max(13,(h-s.h-8)*ys[slot%5]);place(o,targetX,targetY);o.zone=zone;o.el.setAttribute('data-zone',zone)}
+function down(ev,o){if(!overlay.hidden||ev.button!==undefined&&ev.button!==0)return;feedbackOff();let p=coords(ev);drag={o,dx:p.x-o.x,dy:p.y-o.y,pointer:ev.pointerId,originalX:o.x,originalY:o.y};o.el.classList.add('dragging');o.el.setPointerCapture(ev.pointerId);o.el.addEventListener('pointermove',move);o.el.addEventListener('pointerup',up);o.el.addEventListener('pointercancel',cancel);ev.preventDefault()}
+function move(ev){if(!drag||drag.pointer!==ev.pointerId)return;let p=coords(ev);place(drag.o,p.x-drag.dx,p.y-drag.dy)}
+function up(ev){if(!drag||drag.pointer!==ev.pointerId)return;let o=drag.o;let s=size(o.el),zone=zoneFor(o.x+s.w/2,o.y+s.h/2);o.zone=zone;o.el.setAttribute('data-zone',zone);o.el.classList.remove('dragging');endDrag(o);saveRatios()}
+function cancel(ev){if(!drag||drag.pointer!==ev.pointerId)return;let o=drag.o;place(o,drag.originalX,drag.originalY);o.el.classList.remove('dragging');endDrag(o)}
+function endDrag(o){o.el.removeEventListener('pointermove',move);o.el.removeEventListener('pointerup',up);o.el.removeEventListener('pointercancel',cancel);drag=null}
+check.onclick=()=>{if(!overlay.hidden)return;if(items.some(o=>o.zone===null)){status.innerHTML='<span>Распределите все шесть карточек по секторам.</span>';return}let right=0;items.forEach(o=>{let ok=o.zone===o.answer;if(ok)right++;o.el.setAttribute('data-result',ok?'right':'wrong')});checked=true;status.innerHTML='<span>'+(right===items.length?'Отлично! Все совещания распределены правильно.':'Правильно: '+right+' из '+items.length+'. Исправьте карточки с красной рамкой.')+'</span>';retry.hidden=false};
+retry.onclick=()=>{feedbackOff()};document.getElementById('reset').onclick=start;
+document.getElementById('help').onclick=()=>{overlay.hidden=false};document.getElementById('ok').onclick=()=>{overlay.hidden=true};
+document.getElementById('expand').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await game.requestFullscreen()}catch(e){status.innerHTML='<span>Полноэкранный режим недоступен в этом окне.</span>'}};
+document.addEventListener('fullscreenchange',()=>{document.getElementById('expand').title=document.fullscreenElement?'Свернуть':'На весь экран';requestAnimationFrame(layout.bind(null,false))});
+new ResizeObserver(()=>{if(items.length&&!drag){requestAnimationFrame(()=>layout(false))}}).observe(game);
+start();
+})();
+</script></body></html>
